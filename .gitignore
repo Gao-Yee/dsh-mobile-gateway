@@ -1,0 +1,19 @@
+# Node
+node_modules/
+
+# 运行时生成，含敏感信息，不要提交
+config.json
+gateway.log
+*.log
+
+# 未使用的参考/备份文件与上游 Web GUI 资产
+mobile.backup.html
+gui-assets/
+
+# UI 测试截图（由 ui-test.js / ui-test-controls.js 生成）
+shots/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

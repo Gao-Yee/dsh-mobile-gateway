@@ -1,0 +1,10 @@
+{
+  "port": 3081,
+  "targetHost": "127.0.0.1",
+  "targetPort": 3080,
+  "sessionSecret": "",
+  "passwordHash": "",
+  "sessionDays": 30,
+  "maxLoginFails": 5,
+  "loginFailWindowMs": 600000
+}
