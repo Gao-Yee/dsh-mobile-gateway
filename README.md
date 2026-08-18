@@ -60,7 +60,7 @@ DSH Web GUI  127.0.0.1:3080（保持原样，只监听本机，永不对外暴�
 ## 快速开始（PC 端）
 
 1. 确认 DSH 正在运行：浏览器能打开 `http://127.0.0.1:3080`
-2. 双击（或 PowerShell 运行）`start-gateway.ps1`
+2. 双击 `启动网关.bat`（或在 PowerShell 中运行 `.\start-gateway.ps1`）
 3. 查看 `gateway.log`，里面会列出本机局域网地址，如 `http://192.168.x.x:3081`
 
 ## 手机接入
