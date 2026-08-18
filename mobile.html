@@ -1189,6 +1189,7 @@ window.DSH_ICONS = {"IconNewChatOutline16":"<svg viewBox=\"0 0 16 16\" fill=\"no
   }
   function hiddenBlank(it) {
     if (!it.blank) return false;
+    if (it.sessionId === currentId) return false;
     const s = sessions.get(it.sessionId);
     return !(s && s.nodes.length > 0);
   }
@@ -2341,28 +2342,50 @@ window.DSH_ICONS = {"IconNewChatOutline16":"<svg viewBox=\"0 0 16 16\" fill=\"no
   }
   function bindGlobalEvents() {
     const wsScroll = $('wsScroll');
-    if (wsScroll) wsScroll.addEventListener('click', function (e) {
-      const row = e.target.closest('[data-session]');
-      if (row && !e.target.closest('[data-sa]')) {
-        openSession(row.dataset.session);
-        return;
-      }
-      const sa = e.target.closest('[data-sa]');
-      if (sa) {
-        e.stopPropagation();
-        if (sa.dataset.sa === 'stop') stopSession(sa.dataset.session);
-        else if (sa.dataset.sa === 'menu') openSessionMenu(sa);
-        else if (sa.dataset.sa === 'new-in') newSessionIn(Number(sa.dataset.gidx));
-        return;
-      }
-      const wsT = e.target.closest('[data-ws-toggle]');
-      if (wsT) {
-        const key = wsT.dataset.wsToggle;
-        wsOpen.set(key, !(wsOpen.get(key) !== false));
-        renderSidebar();
-        return;
-      }
-    });
+    let tapStart = null;
+    if (wsScroll) {
+      wsScroll.addEventListener('touchstart', function (e) {
+        const row = e.target.closest('[data-session]');
+        if (!row || e.target.closest('[data-sa]')) { tapStart = null; return; }
+        const t = e.touches[0];
+        tapStart = { x: t.clientX, y: t.clientY, id: row.dataset.session };
+      }, { passive: true });
+      wsScroll.addEventListener('touchend', function (e) {
+        if (!tapStart) return;
+        const row = e.target.closest('[data-session]');
+        if (!row || row.dataset.session !== tapStart.id || e.target.closest('[data-sa]')) { tapStart = null; return; }
+        const t = e.changedTouches[0];
+        const dx = t.clientX - tapStart.x;
+        const dy = t.clientY - tapStart.y;
+        tapStart = null;
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+          e.preventDefault();
+          openSession(row.dataset.session);
+        }
+      }, { passive: false });
+      wsScroll.addEventListener('click', function (e) {
+        const row = e.target.closest('[data-session]');
+        if (row && !e.target.closest('[data-sa]')) {
+          openSession(row.dataset.session);
+          return;
+        }
+        const sa = e.target.closest('[data-sa]');
+        if (sa) {
+          e.stopPropagation();
+          if (sa.dataset.sa === 'stop') stopSession(sa.dataset.session);
+          else if (sa.dataset.sa === 'menu') openSessionMenu(sa);
+          else if (sa.dataset.sa === 'new-in') newSessionIn(Number(sa.dataset.gidx));
+          return;
+        }
+        const wsT = e.target.closest('[data-ws-toggle]');
+        if (wsT) {
+          const key = wsT.dataset.wsToggle;
+          wsOpen.set(key, !(wsOpen.get(key) !== false));
+          renderSidebar();
+          return;
+        }
+      });
+    }
     const wsSearch = $('wsSearch');
     if (wsSearch) wsSearch.addEventListener('input', function () { renderSidebar(); });
 
@@ -2579,6 +2602,12 @@ window.DSH_ICONS = {"IconNewChatOutline16":"<svg viewBox=\"0 0 16 16\" fill=\"no
         .mode-btns{gap:4px}
         .model-trigger{max-width:49%}
         .model-label{max-width:80px;font-size:12px}
+      }
+      .session-row,.project-row{touch-action:manipulation}
+      @media (hover:none){
+        .session-row:hover,.project-row:hover{background:transparent}
+        .session-row.selected{background:var(--c-interactive-hover)}
+        .sa-btn:hover,.foot-row-btn:hover{background:transparent}
       }
     `;
     document.head.appendChild(style);
