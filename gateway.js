@@ -218,6 +218,15 @@ function escapeHtml(s) {
   ));
 }
 
+/** decodeURIComponent 的安全包装：畸形百分号编码会抛 URIError，不能让单个请求打崩进程 */
+function safeDecodeURIComponent(s) {
+  try {
+    return decodeURIComponent(s);
+  } catch (_) {
+    return '';
+  }
+}
+
 /** 只允许同源绝对路径（防开放重定向） */
 function safeNextPath(raw) {
   if (typeof raw !== 'string' || raw.length === 0 || raw.length > 200) return '/';
@@ -228,7 +237,7 @@ function safeNextPath(raw) {
 function nextFromUrl(reqUrl) {
   const query = reqUrl.split('?')[1] || '';
   const raw = new URLSearchParams(query).get('next');
-  return raw ? safeNextPath(decodeURIComponent(raw)) : '/';
+  return raw ? safeNextPath(safeDecodeURIComponent(raw)) : '/';
 }
 
 function handleLogin(req, res) {
@@ -253,8 +262,8 @@ function handleLogin(req, res) {
     req.on('end', () => {
       const pwMatch = /(?:^|&)password=([^&]*)/.exec(body);
       const nextMatch = /(?:^|&)next=([^&]*)/.exec(body);
-      const pw = pwMatch ? decodeURIComponent(pwMatch[1].replace(/\+/g, ' ')) : '';
-      const nextPath = safeNextPath(nextMatch ? decodeURIComponent(nextMatch[1].replace(/\+/g, ' ')) : '/');
+      const pw = pwMatch ? safeDecodeURIComponent(pwMatch[1].replace(/\+/g, ' ')) : '';
+      const nextPath = safeNextPath(safeDecodeURIComponent(nextMatch ? nextMatch[1].replace(/\+/g, ' ') : '/'));
       if (checkPassword(pw)) {
         resetFails(ip);
         log(`login OK from ${ip}`);
@@ -285,7 +294,16 @@ function forwardHeaders(headers) {
     if (HOP_BY_HOP.has(k.toLowerCase())) continue;
     out[k] = v;
   }
+  // 移除网关会话 Cookie：req.headers 里它是 cookie 头的一部分，delete 单键无效
   delete out[SESSION_COOKIE];
+  if (out.cookie) {
+    out.cookie = String(out.cookie)
+      .split(';')
+      .map((s) => s.trim())
+      .filter((s) => s && !s.startsWith(SESSION_COOKIE + '='))
+      .join('; ');
+    if (!out.cookie) delete out.cookie;
+  }
   // DSH 仅信任本机来源（Host/Origin 带局域网地址会被 403），转发前重写为本机地址
   out.host = `${config.targetHost}:${config.targetPort}`;
   if (out.origin) out.origin = `http://${config.targetHost}:${config.targetPort}`;
