@@ -11,7 +11,10 @@ mobile.backup.html
 gui-assets/
 
 # UI 测试截图（由 ui-test.js / ui-test-controls.js 生成）
-shots/
+# 默认全部忽略，只提交 README 用到的两张示意图
+shots/*
+!shots/chat-view.jpg
+!shots/list-view.jpg
 
 # 系统文件
 .DS_Store
