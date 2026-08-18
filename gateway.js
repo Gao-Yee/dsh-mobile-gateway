@@ -30,6 +30,13 @@ function log(msg) {
   try { fs.appendFileSync(LOG_PATH, line + '\n'); } catch (_) {}
 }
 
+/** 日志脱敏：避免把 Cookie / Authorization 等请求头写进 gateway.log */
+function redactSensitive(s) {
+  return String(s)
+    .replace(/(Cookie:\s*)[^\r\n]*/gi, '$1[redacted]')
+    .replace(/(Authorization:\s*)[^\r\n]*/gi, '$1[redacted]');
+}
+
 // ---------- 配置 ----------
 function sha256hex(s) {
   return crypto.createHash('sha256').update(s, 'utf8').digest('hex');
@@ -458,7 +465,7 @@ server.on('upgrade', (req, socket, head) => {
 
 server.on('clientError', (err, socket) => {
   const raw = err && err.rawPacket ? err.rawPacket.toString('utf8').replace(/\r\n/g, '\\n').slice(0, 300) : '';
-  log(`clientError: ${err && (err.code || err.message)} raw=${raw}`);
+  log(`clientError: ${err && (err.code || err.message)} raw=${redactSensitive(raw)}`);
   if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
 });
 
