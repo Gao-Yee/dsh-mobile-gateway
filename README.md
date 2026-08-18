@@ -89,7 +89,8 @@ DSH Web GUI  127.0.0.1:3080（保持原样，只监听本机，永不对外暴�
 netsh advfirewall firewall add rule name="dsh-mobile-gateway" dir=in action=allow protocol=TCP localport=3081 profile=private
 ```
 
-Tailscale 访问若被拦，可再加一条 `profile=any` 的规则（同上命令，把 `private` 换成 `any`）。
+> 如果你的 Wi-Fi 被 Windows 识别为「公用网络」，请把命令中的 `private` 换成 `any`。
+> Tailscale 访问若被拦，也建议使用 `profile=any` 的规则。
 
 ## 密码管理
 
